@@ -1,0 +1,4 @@
+app_name: masks
+deploy:
+ - type: static
+   dir: /app
