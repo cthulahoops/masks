@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mask Drawing Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        #toolbar {
+            background-color: #333;
+            color: white;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        #canvas-container {
+            position: relative;
+            place-items: center;
+            overflow: auto;
+            background-color: #fff;
+        }
+        canvas {
+            max-height: 100%;
+            max-width: 100%;
+        }
+        #maskCanvas {
+            inset: 0;
+            position: absolute;
+            mix-blend-mode: screen;
+            opacity: 0.5;
+        }
+        h1 {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+        button, .file-input-label, .radio-button-group label {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        button:hover, .file-input-label:hover, .radio-button-group label:hover {
+            background-color: #45a049;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        input[type="range"] {
+            width: 100%;
+            margin: 10px 0;
+        }
+        .radio-button-group {
+            display: flex;
+            justify-content: space-between;
+        }
+        .radio-button-group input[type="radio"] {
+            display: none;
+        }
+        .radio-button-group label {
+            flex: 1;
+            background-color: #555;
+        }
+        .radio-button-group input[type="radio"]:checked + label {
+            background-color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <div id="toolbar">
+        <h1>Mask Drawing Tool</h1>
+        <label class="file-input-label" for="imageUpload">Select Image</label>
+        <input type="file" id="imageUpload" accept="image/*">
+        <button id="clearMask">Clear Mask</button>
+        <button id="downloadMask">Download Mask</button>
+        <div>
+            <label for="brushSize">Brush Size: <span id="brushSizeValue">25</span></label>
+            <input type="range" id="brushSize" min="1" max="50" value="25">
+        </div>
+        <div class="radio-button-group">
+            <input type="radio" id="brushTool" name="tool" value="brush" checked>
+            <label for="brushTool">Brush</label>
+            <input type="radio" id="eraserTool" name="tool" value="eraser">
+            <label for="eraserTool">Eraser</label>
+        </div>
+    </div>
+    <div id="canvas-container">
+        <canvas id="imageCanvas"></canvas>
+        <canvas id="maskCanvas"></canvas>
+    </div>
+
+    <script>
+        const imageCanvas = document.getElementById('imageCanvas');
+        const maskCanvas = document.getElementById('maskCanvas');
+        const imageCtx = imageCanvas.getContext('2d');
+        const maskCtx = maskCanvas.getContext('2d');
+        const imageUpload = document.getElementById('imageUpload');
+        const clearMaskBtn = document.getElementById('clearMask');
+        const downloadMaskBtn = document.getElementById('downloadMask');
+        const brushSizeInput = document.getElementById('brushSize');
+        const brushSizeValue = document.getElementById('brushSizeValue');
+        const brushTool = document.getElementById('brushTool');
+        const eraserTool = document.getElementById('eraserTool');
+
+        let isDrawing = false;
+        let brushSize = 25;
+        let currentTool = 'brush';
+
+        imageUpload.addEventListener('change', loadImage);
+        clearMaskBtn.addEventListener('click', clearMask);
+        downloadMaskBtn.addEventListener('click', downloadMask);
+        brushSizeInput.addEventListener('input', updateBrushSize);
+        maskCanvas.addEventListener('mousedown', startDrawing);
+        maskCanvas.addEventListener('mousemove', draw);
+        maskCanvas.addEventListener('mouseup', stopDrawing);
+        maskCanvas.addEventListener('mouseout', stopDrawing);
+        brushTool.addEventListener('change', () => currentTool = 'brush');
+        eraserTool.addEventListener('change', () => currentTool = 'eraser');
+
+        function loadImage(e) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    imageCanvas.width = img.width;
+                    imageCanvas.height = img.height;
+                    maskCanvas.width = img.width;
+                    maskCanvas.height = img.height;
+                    imageCtx.drawImage(img, 0, 0);
+                    clearMask();
+                }
+                img.src = event.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+
+        function clearMask() {
+            maskCtx.fillStyle = 'black';
+            maskCtx.fillRect(0, 0, maskCanvas.width, maskCanvas.height);
+        }
+
+        function updateBrushSize() {
+            brushSize = brushSizeInput.value;
+            brushSizeValue.textContent = brushSize;
+        }
+
+        function startDrawing(e) {
+            isDrawing = true;
+            draw(e);
+        }
+
+        function getScaleFactor() {
+            const canvasRect = maskCanvas.getBoundingClientRect();
+            return {
+                x: maskCanvas.width / canvasRect.width,
+                y: maskCanvas.height / canvasRect.height
+            };
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+
+            const rect = maskCanvas.getBoundingClientRect();
+            const scaleFactor = getScaleFactor();
+            const x = (e.clientX - rect.left) * scaleFactor.x;
+            const y = (e.clientY - rect.top) * scaleFactor.y;
+            
+            maskCtx.beginPath();
+            maskCtx.arc(x, y, brushSize / 2, 0, Math.PI * 2);
+            
+            if (currentTool === 'brush') {
+                maskCtx.fillStyle = 'white';
+                maskCtx.fill();
+            } else if (currentTool === 'eraser') {
+                maskCtx.fillStyle = 'black';
+                maskCtx.fill();
+            }
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        function downloadImage() {
+            const link = document.createElement('a');
+            link.download = 'original_image.png';
+            link.href = imageCanvas.toDataURL();
+            link.click();
+        }
+
+        function downloadMask() {
+            const link = document.createElement('a');
+            link.download = 'mask.png';
+            link.href = maskCanvas.toDataURL();
+            link.click();
+        }
+    </script>
+</body>
+</html>
