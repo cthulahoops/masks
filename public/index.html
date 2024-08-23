@@ -254,10 +254,12 @@
             e.preventDefault(); // Prevent scrolling on touch devices
 
             const { x, y } = getCoordinates(e);
+
+            const scaleFactor = getScaleFactor().x; // x and y are the same.
             
             maskCtx.beginPath();
-            maskCtx.arc(x, y, brushSize / 2, 0, Math.PI * 2);
-            
+            maskCtx.arc(x, y, scaleFactor * brushSize / 2, 0, Math.PI * 2);
+
             if (currentTool === 'brush') {
                 maskCtx.fillStyle = 'white';
                 maskCtx.fill();
