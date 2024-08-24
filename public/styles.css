@@ -1,0 +1,142 @@
+
+:root {
+    --toolbar-width: 250px;
+    --primary-color: #4CAF50;
+    --secondary-color: #333;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background-color: #f0f0f0;
+}
+
+#toolbar {
+    background-color: var(--secondary-color);
+    color: white;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+}
+
+#canvas-container {
+    position: relative;
+    flex: 1;
+    overflow: auto;
+    background-color: #fff;
+}
+
+canvas {
+    max-height: 100%;
+    max-width: 100%;
+}
+
+#maskCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    mix-blend-mode: screen;
+    opacity: 0.5;
+}
+
+h1 {
+    font-size: 1.2em;
+    margin-bottom: 20px;
+}
+
+button, .file-input-label, .radio-button-group label {
+    background-color: var(--primary-color);
+    border: none;
+    color: white;
+    padding: 10px 15px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 14px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+}
+
+button:hover, .file-input-label:hover, .radio-button-group label:hover {
+    background-color: #45a049;
+}
+
+input[type="file"] {
+    display: none;
+}
+
+input[type="range"] {
+    width: 100%;
+    margin: 10px 0;
+}
+
+.radio-button-group {
+    display: flex;
+    justify-content: space-between;
+}
+
+.radio-button-group input[type="radio"] {
+    display: none;
+}
+
+.radio-button-group label {
+    flex: 1;
+    background-color: #555;
+}
+
+.radio-button-group input[type="radio"]:checked + label {
+    background-color: var(--primary-color);
+}
+
+body {
+    flex-direction: row;
+}
+
+#toolbar {
+    width: var(--toolbar-width);
+}
+
+
+@media (max-width: 767px) {
+    body {
+        flex-direction: column;
+    }
+
+    h1 {
+        display: none;
+    }
+
+    #toolbar {
+        width: 100%;
+        padding: 0.5em;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5em;
+    }
+
+    #toolbar > * {
+        flex-grow: 1;
+    }
+
+    input[type="range"] {
+        width: 100%;
+    }
+
+    .radio-button-group {
+        gap: 0.5rem;
+    }
+}
